@@ -95,7 +95,7 @@ export const HomePage = () => {
             Seçilmiş məhsullar
           </Typography>
           <Typography component="h2" variant="h3" color="primary.main" sx={{ mt: 1 }}>
-            Yeni gəliblər
+            Yeni gələnlər
           </Typography>
         </Box>
 
