@@ -7,13 +7,37 @@ interface AuthState {
   token: string | null;
 }
 
-const storedUser = localStorage.getItem('user');
-const storedToken = localStorage.getItem('token');
+const readStoredAuth = (): AuthState => {
+  const token = localStorage.getItem('token');
+  const storedUser = localStorage.getItem('user');
 
-const initialState: AuthState = {
-  user: storedUser ? JSON.parse(storedUser) : null,
-  token: storedToken ?? null,
+  if (!token) {
+    localStorage.removeItem('user');
+    return { user: null, token: null };
+  }
+
+  if (!storedUser) {
+    return { user: null, token };
+  }
+
+  try {
+    const user = JSON.parse(storedUser) as User;
+    if (
+      typeof user.id !== 'string' ||
+      typeof user.name !== 'string' ||
+      !['user', 'admin'].includes(user.role)
+    ) {
+      throw new Error('Stored user data is invalid.');
+    }
+
+    return { user, token };
+  } catch {
+    localStorage.removeItem('user');
+    return { user: null, token };
+  }
 };
+
+const initialState: AuthState = readStoredAuth();
 
 const authSlice = createSlice({
   name: 'auth',

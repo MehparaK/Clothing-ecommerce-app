@@ -11,38 +11,57 @@ export const findSimilarProducts = (
   allProducts: Product[],
   limit = 4
 ): Product[] => {
-  const others = allProducts.filter((p) => p._id !== currentProduct._id);
+  const resultLimit = Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 0;
+  if (resultLimit === 0) return [];
 
-  const priceRange = currentProduct.price * 0.3;
+  const currentId = currentProduct?._id;
+  const currentCategory = typeof currentProduct?.category === 'string'
+    ? currentProduct.category.trim().toLocaleLowerCase()
+    : '';
+  const currentPrice = Number.isFinite(currentProduct?.price) ? currentProduct.price : null;
+  const others = (Array.isArray(allProducts) ? allProducts : []).filter(
+    (product) => product && product._id !== currentId
+  );
+  const priceRange = currentPrice === null ? null : currentPrice * 0.3;
 
   const sameCategoryAndPrice = others.filter(
-    (p) =>
-      p.category === currentProduct.category &&
-      Math.abs(p.price - currentProduct.price) <= priceRange
+    (product) =>
+      currentCategory !== '' &&
+      typeof product.category === 'string' &&
+      product.category.trim().toLocaleLowerCase() === currentCategory &&
+      currentPrice !== null &&
+      priceRange !== null &&
+      Number.isFinite(product.price) &&
+      Math.abs(product.price - currentPrice) <= priceRange
   );
 
-  if (sameCategoryAndPrice.length >= limit) {
-    return sameCategoryAndPrice.slice(0, limit);
+  if (sameCategoryAndPrice.length >= resultLimit) {
+    return sameCategoryAndPrice.slice(0, resultLimit);
   }
 
   const sameCategory = others.filter(
-    (p) =>
-      p.category === currentProduct.category &&
-      !sameCategoryAndPrice.some((sp) => sp._id === p._id)
+    (product) =>
+      currentCategory !== '' &&
+      typeof product.category === 'string' &&
+      product.category.trim().toLocaleLowerCase() === currentCategory &&
+      !sameCategoryAndPrice.some((similar) => similar._id === product._id)
   );
 
   const combined = [...sameCategoryAndPrice, ...sameCategory];
-  if (combined.length >= limit) {
-    return combined.slice(0, limit);
+  if (combined.length >= resultLimit) {
+    return combined.slice(0, resultLimit);
   }
 
-  const byPrice = others
-    .filter((p) => !combined.some((cp) => cp._id === p._id))
-    .sort(
-      (a, b) =>
-        Math.abs(a.price - currentProduct.price) -
-        Math.abs(b.price - currentProduct.price)
-    );
+  const byPrice = others.filter(
+    (product) => !combined.some((similar) => similar._id === product._id)
+  );
+  if (currentPrice !== null) {
+    byPrice.sort((a, b) => {
+      const aPrice = Number.isFinite(a.price) ? Math.abs(a.price - currentPrice) : Infinity;
+      const bPrice = Number.isFinite(b.price) ? Math.abs(b.price - currentPrice) : Infinity;
+      return aPrice - bPrice;
+    });
+  }
 
-  return [...combined, ...byPrice].slice(0, limit);
+  return [...combined, ...byPrice].slice(0, resultLimit);
 };

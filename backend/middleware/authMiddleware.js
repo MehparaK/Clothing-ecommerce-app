@@ -8,21 +8,21 @@ const protect = async (req, res, next) => {
     try {
       token = req.headers.authorization.split(' ')[1];
       
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'gizli_acar_123');
       
       req.user = await User.findById(decoded.id).select('-password');
       if (!req.user) {
-        return res.status(401).json({ message: 'Not authorized, user not found' });
+        return res.status(401).json({ message: 'İcazə yoxdur: istifadəçi tapılmadı.' });
       }
 
       return next();
     } catch (error) {
-      res.status(401).json({ message: 'Not authorized, token failed' });
+      res.status(401).json({ message: 'İcazə yoxdur: giriş məlumatı yanlışdır.' });
     }
   }
 
   if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+    res.status(401).json({ message: 'İcazə yoxdur: daxil olmalısınız.' });
   }
 };
 
@@ -30,7 +30,7 @@ const admin = (req, res, next) => {
   if (req.user && req.user.role === 'admin') {
     next();
   } else {
-    res.status(401).json({ message: 'Not authorized as an admin' });
+    res.status(401).json({ message: 'Bu əməliyyat üçün idarəçi icazəsi tələb olunur.' });
   }
 };
 

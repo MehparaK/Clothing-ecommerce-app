@@ -4,32 +4,39 @@ import {
   Box,
   Button,
   Container,
+  Divider,
   IconButton,
+  Menu,
+  MenuItem,
   Toolbar,
   Typography,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
 import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import { baseApi } from '../../features/api/baseApi';
 import { logout } from '../../features/auth/authSlice';
+import { NotificationBell } from '../notifications/NotificationBell';
 
 export const Navbar = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const user = useAppSelector((state) => state.auth.user);
   const cartCount = useAppSelector((state) =>
     state.cart.items.reduce((total, item) => total + item.quantity, 0)
   );
 
   const handleLogout = () => {
+    setMenuAnchor(null);
     dispatch(logout());
+    dispatch(baseApi.util.resetApiState());
     navigate('/', { replace: true });
   };
+
+  const closeMenu = () => setMenuAnchor(null);
 
   return (
     <AppBar
@@ -43,131 +50,57 @@ export const Navbar = () => {
       }}
     >
       <Container maxWidth="xl">
-        <Toolbar disableGutters sx={{ minHeight: { xs: 64, md: 76 } }}>
-          {isMobile && (
-            <IconButton
-              aria-label="Open navigation menu"
-              component={Link}
-              to="/products"
-              edge="start"
-              sx={{ mr: 1, color: 'text.primary' }}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
-
-          <Typography
-            component={Link}
-            to="/"
-            variant="h5"
-            sx={{
-              flexGrow: 1,
-              color: 'primary.main',
-              textDecoration: 'none',
-              letterSpacing: '0.08em',
-            }}
-          >
-            CLOTHING
-          </Typography>
-
-          {!isMobile && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 2 }}>
-              <Button component={Link} to="/products" color="inherit">
-                Shop
-              </Button>
-
-              {user?.role === 'admin' && (
-                <Button component={Link} to="/admin" color="inherit">
-                  Admin Panel
-                </Button>
-              )}
-
-              {user ? (
-                <>
-                  <Typography
-                    variant="body2"
-                    sx={{ ml: 1, color: 'text.primary', fontWeight: 600 }}
-                  >
-                    {user.name}
-                  </Typography>
+        <Toolbar disableGutters sx={{ minHeight: { xs: 64, md: 76 }, gap: 2 }}>
+          <Button component={Link} to="/products" color="primary">
+            Mağaza
+          </Button>
+          <Box sx={{ flexGrow: 1 }} />
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 2 }}>
+            {user ? (
+              <>
+                {user.role === 'admin' && (
                   <Button
+                    component={Link}
+                    to="/admin"
+                    color="secondary"
                     variant="outlined"
-                    color="primary"
-                    onClick={handleLogout}
-                    sx={{ ml: 1 }}
                   >
-                    Logout
+                    İdarəçi paneli
                   </Button>
-                </>
-              ) : (
-                <>
-                  <Button component={Link} to="/login" color="primary">
-                    Login
-                  </Button>
-                  <Button component={Link} to="/register" variant="contained">
-                    Register
-                  </Button>
-                </>
-              )}
-            </Box>
-          )}
-
-          {isMobile && user?.role === 'admin' && (
-            <IconButton
-              component={Link}
-              to="/admin"
-              aria-label="Admin panel"
-              sx={{ color: 'text.primary', mr: 0.5 }}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
-
-          {isMobile && user && (
-            <>
-              <Typography
-                variant="caption"
-                sx={{ mr: 1, maxWidth: 56, overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 700 }}
-              >
-                {user.name}
-              </Typography>
-              <IconButton
-                aria-label="Logout"
-                onClick={handleLogout}
-                sx={{ color: 'text.primary', mr: 0.5 }}
-              >
-                <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                  Out
+                )}
+                <Typography
+                  component={Link}
+                  to="/profile"
+                  variant="body2"
+                  sx={{
+                    color: 'text.primary',
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    '&:hover': { color: 'primary.main', textDecoration: 'underline' },
+                  }}
+                >
+                  {user.name}
                 </Typography>
-              </IconButton>
-            </>
-          )}
-
-          {!user && isMobile && (
-            <>
-              <Button
-                component={Link}
-                to="/login"
-                size="small"
-                sx={{ mr: 0.5, px: 1 }}
-              >
-                Login
-              </Button>
-              <Button
-                component={Link}
-                to="/register"
-                size="small"
-                sx={{ mr: 0.5, px: 1 }}
-              >
-                Register
-              </Button>
-            </>
-          )}
-
+                <Button variant="outlined" color="primary" onClick={handleLogout}>
+                  Çıxış
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button component={Link} to="/login" color="primary">
+                  Daxil ol
+                </Button>
+                <Button component={Link} to="/register" variant="contained">
+                  Qeydiyyat
+                </Button>
+              </>
+            )}
+          </Box>
+          <NotificationBell />
           <IconButton
             component={Link}
             to="/cart"
-            aria-label={`Cart with ${cartCount} items`}
+            aria-label={`Səbət: ${cartCount} məhsul`}
             sx={{ color: 'primary.main' }}
           >
             <Badge
@@ -183,6 +116,49 @@ export const Navbar = () => {
               <ShoppingBagOutlinedIcon />
             </Badge>
           </IconButton>
+          <Box sx={{ display: { xs: 'inline-flex', md: 'none' } }}>
+            <IconButton
+              aria-label="Naviqasiyanı aç"
+              aria-controls={menuAnchor ? 'mobile-navigation-menu' : undefined}
+              aria-haspopup="true"
+              aria-expanded={Boolean(menuAnchor)}
+              onClick={(event) => setMenuAnchor(event.currentTarget)}
+              sx={{ color: 'primary.main' }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Menu
+              id="mobile-navigation-menu"
+              anchorEl={menuAnchor}
+              open={Boolean(menuAnchor)}
+              onClose={closeMenu}
+            >
+              <MenuItem component={Link} to="/" onClick={closeMenu}>Ana səhifə</MenuItem>
+              <MenuItem component={Link} to="/products" onClick={closeMenu}>Mağaza</MenuItem>
+              {user ? (
+                <>
+                  <Divider />
+                  {user.role === 'admin' && (
+                    <MenuItem component={Link} to="/admin" onClick={closeMenu}>
+                      İdarəçi paneli
+                    </MenuItem>
+                  )}
+                  <MenuItem component={Link} to="/profile" onClick={closeMenu}>Profilim</MenuItem>
+                  <MenuItem component={Link} to="/favorites" onClick={closeMenu}>Sevimlilərim</MenuItem>
+                  <MenuItem component={Link} to="/my-orders" onClick={closeMenu}>Sifarişlərim</MenuItem>
+                  <MenuItem component={Link} to="/cart" onClick={closeMenu}>Səbət</MenuItem>
+                  <Divider />
+                  <MenuItem onClick={handleLogout}>Çıxış</MenuItem>
+                </>
+              ) : (
+                <>
+                  <Divider />
+                  <MenuItem component={Link} to="/login" onClick={closeMenu}>Daxil ol</MenuItem>
+                  <MenuItem component={Link} to="/register" onClick={closeMenu}>Qeydiyyat</MenuItem>
+                </>
+              )}
+            </Menu>
+          </Box>
         </Toolbar>
       </Container>
     </AppBar>

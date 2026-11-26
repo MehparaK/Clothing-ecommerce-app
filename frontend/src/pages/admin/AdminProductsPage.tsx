@@ -68,12 +68,17 @@ export const AdminProductsPage = () => {
       sortable: false,
       renderCell: (params) => (
         <>
-          <IconButton size="small" onClick={() => handleOpenEdit(params.row)}>
+          <IconButton
+            size="small"
+            aria-label="Məhsulu redaktə et"
+            onClick={() => handleOpenEdit(params.row)}
+          >
             <Edit fontSize="small" />
           </IconButton>
           <IconButton
             size="small"
             color="error"
+            aria-label="Məhsulu sil"
             onClick={() => handleDelete(params.row._id)}
           >
             <Delete fontSize="small" />
@@ -85,7 +90,16 @@ export const AdminProductsPage = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 2,
+          mb: 3,
+        }}
+      >
         <Typography variant="h4" sx={{ fontWeight: 700 }}>Məhsullar</Typography>
         <Button variant="contained" startIcon={<Add />} onClick={handleOpenCreate}>
           Yeni Məhsul
@@ -123,6 +137,29 @@ export const AdminProductsPage = () => {
             rows={products}
             columns={columns}
             getRowId={(row) => row._id}
+            localeText={{
+              noRowsLabel: 'Məhsul yoxdur.',
+              noResultsOverlayLabel: 'Nəticə tapılmadı.',
+              columnMenuLabel: 'Sütun menyusu',
+              columnMenuShowColumns: 'Sütunları göstər',
+              columnMenuManageColumns: 'Sütunları idarə et',
+              columnMenuFilter: 'Filtrlə',
+              columnMenuHideColumn: 'Sütunu gizlət',
+              columnMenuUnsort: 'Sıralamanı sil',
+              columnMenuSortAsc: 'Artan sıralama',
+              columnMenuSortDesc: 'Azalan sıralama',
+              columnHeaderSortIconAriaLabel: (column, direction) =>
+                `${column} sütununa görə ${direction === 'asc' ? 'artan' : 'azalan'} sıralama`,
+              paginationRowsPerPage: 'Sətir sayı:',
+              paginationDisplayedRows: ({ from, to, count }) =>
+                `${from}–${to} / ${count === -1 ? `ən azı ${to}` : count}`,
+              paginationItemAriaLabel: (type) => ({
+                first: 'İlk səhifə',
+                last: 'Son səhifə',
+                next: 'Növbəti səhifə',
+                previous: 'Əvvəlki səhifə',
+              })[type],
+            }}
             pageSizeOptions={[10, 25, 50]}
             initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
             disableRowSelectionOnClick

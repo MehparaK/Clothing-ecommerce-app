@@ -8,12 +8,13 @@ import {
   Container,
   Divider,
   IconButton,
+  TextField,
   Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { useCreateOrderMutation } from '../features/api/ordersApi';
@@ -32,19 +33,26 @@ export const CartPage = () => {
   const [createOrder, { isLoading }] = useCreateOrderMutation();
   const [orderError, setOrderError] = useState('');
   const [orderSuccess, setOrderSuccess] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState(user?.address ?? '');
+  const [addressError, setAddressError] = useState('');
 
   const total = items.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
     0
   );
 
-  const handleCompleteOrder = async () => {
+  const handleCompleteOrder = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (!user) {
       navigate('/login', { state: { from: '/cart' }, replace: true });
       return;
     }
 
     if (items.length === 0) return;
+    if (!deliveryAddress.trim()) {
+      setAddressError('Çatdırılma ünvanı tələb olunur.');
+      return;
+    }
 
     setOrderError('');
     setOrderSuccess('');
@@ -54,8 +62,10 @@ export const CartPage = () => {
         items: items.map((item) => ({
           product: item.product._id,
           quantity: item.quantity,
+          selectedSize: item.selectedSize,
         })),
         total,
+        deliveryAddress: deliveryAddress.trim(),
       }).unwrap();
 
       dispatch(clearCart());
@@ -111,7 +121,7 @@ export const CartPage = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {items.map((item) => (
               <Card
-                key={item.product._id}
+                key={`${item.product._id}-${item.selectedSize}`}
                 sx={{
                   display: 'grid',
                   gridTemplateColumns: { xs: '88px 1fr', sm: '120px 1fr auto' },
@@ -121,7 +131,7 @@ export const CartPage = () => {
               >
                 <CardMedia
                   component="img"
-                  image={item.product.image || 'https://via.placeholder.com/300x400?text=No+Image'}
+                  image={item.product.image || 'https://via.placeholder.com/300x400?text=%C5%9E%C9%99kil+yoxdur'}
                   alt={item.product.name}
                   sx={{
                     width: { xs: 72, sm: 96 },
@@ -138,6 +148,9 @@ export const CartPage = () => {
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                     {item.product.price} AZN
                   </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Ölçü: {item.selectedSize}
+                  </Typography>
                 </Box>
 
                 <Box
@@ -153,7 +166,10 @@ export const CartPage = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
                     <IconButton
                       aria-label="Azalt"
-                      onClick={() => dispatch(decreaseQuantity(item.product._id))}
+                      onClick={() => dispatch(decreaseQuantity({
+                        productId: item.product._id,
+                        selectedSize: item.selectedSize,
+                      }))}
                       disabled={item.quantity <= 1}
                     >
                       <RemoveIcon fontSize="small" />
@@ -163,7 +179,10 @@ export const CartPage = () => {
                     </Typography>
                     <IconButton
                       aria-label="Artır"
-                      onClick={() => dispatch(increaseQuantity(item.product._id))}
+                      onClick={() => dispatch(increaseQuantity({
+                        productId: item.product._id,
+                        selectedSize: item.selectedSize,
+                      }))}
                       disabled={item.quantity >= item.product.stock}
                     >
                       <AddIcon fontSize="small" />
@@ -177,7 +196,10 @@ export const CartPage = () => {
                   <IconButton
                     aria-label="Məhsulu sil"
                     color="error"
-                    onClick={() => dispatch(removeFromCart(item.product._id))}
+                    onClick={() => dispatch(removeFromCart({
+                      productId: item.product._id,
+                      selectedSize: item.selectedSize,
+                    }))}
                   >
                     <DeleteOutlineIcon />
                   </IconButton>
@@ -186,8 +208,29 @@ export const CartPage = () => {
             ))}
           </Box>
 
-          <Card sx={{ p: 3, position: { md: 'sticky' }, top: { md: 100 } }}>
+          <Card
+            component="form"
+            noValidate
+            onSubmit={handleCompleteOrder}
+            sx={{ p: 3, position: { md: 'sticky' }, top: { md: 100 } }}
+          >
             <Typography variant="h5" sx={{ mb: 2 }}>Sifariş xülasəsi</Typography>
+            <TextField
+              label="Çatdırılma ünvanı"
+              value={deliveryAddress}
+              onChange={(event) => {
+                setDeliveryAddress(event.target.value);
+                if (event.target.value.trim()) setAddressError('');
+              }}
+              error={Boolean(addressError)}
+              helperText={addressError}
+              required
+              fullWidth
+              multiline
+              minRows={2}
+              autoComplete="street-address"
+              sx={{ mb: 2 }}
+            />
             <Divider sx={{ mb: 2 }} />
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
               <Typography color="text.secondary">Cəmi</Typography>
@@ -199,8 +242,8 @@ export const CartPage = () => {
               variant="contained"
               size="large"
               fullWidth
+              type="submit"
               disabled={isLoading}
-              onClick={handleCompleteOrder}
               sx={{ py: 1.5 }}
             >
               {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Sifarişi tamamla'}
@@ -209,6 +252,7 @@ export const CartPage = () => {
               color="error"
               fullWidth
               sx={{ mt: 1 }}
+              type="button"
               onClick={() => dispatch(clearCart())}
             >
               Səbəti təmizlə

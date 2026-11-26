@@ -31,6 +31,13 @@ const productSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    sizes: {
+      type: [{
+        type: String,
+        enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+      }],
+      default: () => ['S', 'M', 'L', 'XL'],
+    },
   },
   {
     timestamps: true,

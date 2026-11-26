@@ -7,17 +7,34 @@ import {
   CircularProgress,
   Container,
   Divider,
+  IconButton,
   Typography,
 } from '@mui/material';
-import { Link, useParams } from 'react-router-dom';
-import { useAppDispatch } from '../app/hooks';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { SimilarProducts } from '../components/shop/SimilarProducts';
+import { SizeSelector } from '../components/shop/SizeSelector';
 import { addToCart } from '../features/cart/cartSlice';
 import { useGetProductByIdQuery } from '../features/api/productsApi';
+import { DEFAULT_PRODUCT_SIZES, type ProductSize } from '../types';
 
 export const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const user = useAppSelector((state) => state.auth.user);
+  const [sizeSelection, setSizeSelection] = useState<{
+    productId: string | undefined;
+    size: ProductSize | null;
+  }>({ productId: id, size: null });
+  const [quantitySelection, setQuantitySelection] = useState<{
+    productId: string | undefined;
+    quantity: number;
+  }>({ productId: id, quantity: 1 });
+  const selectedSize = sizeSelection.productId === id ? sizeSelection.size : null;
   const {
     data: product,
     isLoading,
@@ -45,8 +62,30 @@ export const ProductDetailPage = () => {
     );
   }
 
+  const quantity =
+    quantitySelection.productId === id
+      ? Math.min(quantitySelection.quantity, Math.max(1, product.stock))
+      : 1;
+
   const handleAddToCart = () => {
-    dispatch(addToCart(product));
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    if (!selectedSize) return;
+
+    dispatch(addToCart({ product, selectedSize, quantity }));
+  };
+  const sizes = product.sizes?.length ? product.sizes : DEFAULT_PRODUCT_SIZES;
+  const handleSizeChange = (size: ProductSize | null) => {
+    setSizeSelection({ productId: id, size });
+  };
+  const handleQuantityChange = (nextQuantity: number) => {
+    setQuantitySelection({
+      productId: id,
+      quantity: Math.min(Math.max(1, nextQuantity), Math.max(1, product.stock)),
+    });
   };
 
   return (
@@ -68,6 +107,9 @@ export const ProductDetailPage = () => {
             sx={{
               overflow: 'hidden',
               borderRadius: 2,
+              width: '100%',
+              maxWidth: { xs: 420, md: 520 },
+              justifySelf: 'center',
               bgcolor: 'grey.100',
               border: '1px solid',
               borderColor: 'divider',
@@ -76,7 +118,7 @@ export const ProductDetailPage = () => {
           >
             <CardMedia
               component="img"
-              image={product.image || 'https://via.placeholder.com/800x1000?text=No+Image'}
+              image={product.image || 'https://via.placeholder.com/800x1000?text=%C5%9E%C9%99kil+yoxdur'}
               alt={product.name}
               sx={{
                 width: '100%',
@@ -117,6 +159,17 @@ export const ProductDetailPage = () => {
               {product.description}
             </Typography>
 
+            <Typography variant="body2" sx={{ mb: 1, fontWeight: 700 }}>
+              Ölçü seçin
+            </Typography>
+            <Box sx={{ mb: 3 }}>
+              <SizeSelector
+                sizes={sizes}
+                selectedSize={selectedSize}
+                onChange={handleSizeChange}
+              />
+            </Box>
+
             <Chip
               label={product.stock > 0 ? `${product.stock} ədəd stokda` : 'Stokda yoxdur'}
               color={product.stock > 0 ? 'success' : 'default'}
@@ -124,10 +177,43 @@ export const ProductDetailPage = () => {
               sx={{ mb: 3 }}
             />
 
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" sx={{ mb: 1, fontWeight: 700 }}>
+                Miqdar
+              </Typography>
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                }}
+              >
+                <IconButton
+                  aria-label="Miqdarı azalt"
+                  disabled={quantity <= 1}
+                  onClick={() => handleQuantityChange(quantity - 1)}
+                >
+                  <RemoveIcon />
+                </IconButton>
+                <Typography sx={{ minWidth: 36, textAlign: 'center', fontWeight: 700 }}>
+                  {quantity}
+                </Typography>
+                <IconButton
+                  aria-label="Miqdarı artır"
+                  disabled={quantity >= product.stock}
+                  onClick={() => handleQuantityChange(quantity + 1)}
+                >
+                  <AddIcon />
+                </IconButton>
+              </Box>
+            </Box>
+
             <Button
               variant="contained"
               size="large"
-              disabled={product.stock === 0}
+              disabled={product.stock === 0 || !selectedSize}
               onClick={handleAddToCart}
               fullWidth
               sx={{ py: 1.5, fontSize: '1rem' }}

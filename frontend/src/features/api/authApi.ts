@@ -3,7 +3,11 @@ import { baseApi } from './baseApi';
 interface AuthApiUser {
   _id: string;
   name: string;
+  lastName: string;
   email: string;
+  phone: string;
+  address?: string;
+  termsAccepted: boolean;
   role: 'user' | 'admin';
 }
 
@@ -18,12 +22,29 @@ export interface LoginRequest {
 
 export interface RegisterRequest {
   name: string;
+  lastName: string;
   email: string;
+  phone: string;
+  address: string;
   password: string;
+  confirmPassword: string;
+  termsAccepted: boolean;
+}
+
+export interface UpdateProfileRequest {
+  name: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
 }
 
 export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    getCurrentUser: builder.query<AuthApiUser, void>({
+      query: () => '/auth/me',
+      providesTags: ['Auth'],
+    }),
     login: builder.mutation<AuthApiResponse, LoginRequest>({
       query: (body) => ({
         url: '/auth/login',
@@ -40,7 +61,20 @@ export const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ['Auth'],
     }),
+    updateProfile: builder.mutation<AuthApiUser, UpdateProfileRequest>({
+      query: (body) => ({
+        url: '/auth/me',
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: ['Auth'],
+    }),
   }),
 });
 
-export const { useLoginMutation, useRegisterMutation } = authApi;
+export const {
+  useGetCurrentUserQuery,
+  useLoginMutation,
+  useRegisterMutation,
+  useUpdateProfileMutation,
+} = authApi;

@@ -19,6 +19,11 @@ const orderSchema = new mongoose.Schema(
           required: true,
           min: 1,
         },
+        selectedSize: {
+          type: String,
+          enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+          required: true,
+        },
       },
     ],
     total: {
@@ -26,10 +31,19 @@ const orderSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    deliveryAddress: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 500,
+    },
     status: {
       type: String,
-      enum: ['pending', 'shipped', 'delivered'],
+      enum: ['pending', 'confirmed', 'in_delivery', 'completed', 'cancelled', 'shipped', 'delivered'],
       default: 'pending',
+    },
+    closedAt: {
+      type: Date,
     },
   },
   { timestamps: true }

@@ -13,6 +13,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../app/hooks';
 import { useLoginMutation } from '../features/api/authApi';
+import { baseApi } from '../features/api/baseApi';
 import { setCredentials } from '../features/auth/authSlice';
 
 export const LoginPage = () => {
@@ -28,9 +29,9 @@ export const LoginPage = () => {
     const nextErrors: { email?: string; password?: string } = {};
 
     if (!email.trim()) {
-      nextErrors.email = 'Email tələb olunur.';
+      nextErrors.email = 'E-poçt ünvanı tələb olunur.';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      nextErrors.email = 'Düzgün email formatı daxil edin.';
+      nextErrors.email = 'Düzgün e-poçt formatı daxil edin.';
     }
 
     if (!password) {
@@ -51,13 +52,18 @@ export const LoginPage = () => {
 
     try {
       const response = await login({ email: email.trim(), password }).unwrap();
+      dispatch(baseApi.util.resetApiState());
       dispatch(
         setCredentials({
           token: response.token,
           user: {
             id: response._id,
             name: response.name,
+            lastName: response.lastName,
             email: response.email,
+            phone: response.phone,
+            address: response.address,
+            termsAccepted: response.termsAccepted,
             role: response.role,
           },
         })
@@ -91,7 +97,7 @@ export const LoginPage = () => {
 
           <Box component="form" noValidate onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             <TextField
-              label="Email"
+              label="E-poçt"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -123,7 +129,7 @@ export const LoginPage = () => {
               underline="hover"
               sx={{ fontWeight: 700 }}
             >
-              Qeydiyyat
+              Qeydiyyatdan keç
             </MuiLink>
           </Typography>
         </Paper>

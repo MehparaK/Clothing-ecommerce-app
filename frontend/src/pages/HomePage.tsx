@@ -119,7 +119,7 @@ export const HomePage = () => {
 
         {!isLoading && !isError && products.length > 0 && (
           <Grid container spacing={3}>
-            {products.map((product) => (
+            {products.slice(0, 4).map((product) => (
               <Grid
                 key={product._id}
                 size={{ xs: 12, sm: 6, md: 3 }}
@@ -129,6 +129,13 @@ export const HomePage = () => {
               </Grid>
             ))}
           </Grid>
+        )}
+        {!isLoading && !isError && products.length > 4 && (
+          <Box sx={{ mt: 4, textAlign: 'center' }}>
+            <Button component={Link} to="/products" variant="outlined">
+              Bütün məhsullara bax
+            </Button>
+          </Box>
         )}
       </Container>
     </Box>

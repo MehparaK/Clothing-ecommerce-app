@@ -61,7 +61,7 @@ export const CartDrawer = ({ open, onClose }: CartDrawerProps) => {
           ) : (
             items.map((item) => (
               <Box
-                key={item.product._id}
+                key={`${item.product._id}-${item.selectedSize}`}
                 sx={{
                   display: 'grid',
                   gridTemplateColumns: '82px 1fr auto',
@@ -75,13 +75,16 @@ export const CartDrawer = ({ open, onClose }: CartDrawerProps) => {
               >
                 <CardMedia
                   component="img"
-                  image={item.product.image || 'https://via.placeholder.com/200x260?text=No+Image'}
+                  image={item.product.image || 'https://via.placeholder.com/200x260?text=%C5%9E%C9%99kil+yoxdur'}
                   alt={item.product.name}
                   sx={{ width: 82, height: 108, borderRadius: 1, objectFit: 'cover' }}
                 />
                 <Box>
                   <Typography sx={{ fontWeight: 700 }} noWrap>
                     {item.product.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Ölçü: {item.selectedSize}
                   </Typography>
                   <Typography variant="body2" color="primary.main" sx={{ mt: 0.5, fontWeight: 700 }}>
                     {item.product.price} AZN
@@ -90,8 +93,11 @@ export const CartDrawer = ({ open, onClose }: CartDrawerProps) => {
                     <IconButton
                       size="small"
                       aria-label="Azalt"
-                      disabled={item.quantity <= 1}
-                      onClick={() => dispatch(decreaseQuantity(item.product._id))}
+                      disabled={item.quantity <= 1 || item.product.stock === 0}
+                      onClick={() => dispatch(decreaseQuantity({
+                        productId: item.product._id,
+                        selectedSize: item.selectedSize,
+                      }))}
                     >
                       <RemoveIcon fontSize="small" />
                     </IconButton>
@@ -101,17 +107,28 @@ export const CartDrawer = ({ open, onClose }: CartDrawerProps) => {
                     <IconButton
                       size="small"
                       aria-label="Artır"
-                      disabled={item.quantity >= item.product.stock}
-                      onClick={() => dispatch(increaseQuantity(item.product._id))}
+                      disabled={item.quantity >= item.product.stock || item.product.stock === 0}
+                      onClick={() => dispatch(increaseQuantity({
+                        productId: item.product._id,
+                        selectedSize: item.selectedSize,
+                      }))}
                     >
                       <AddIcon fontSize="small" />
                     </IconButton>
+                    {item.product.stock === 0 && (
+                      <Typography variant="caption" color="error" sx={{ ml: 1, fontWeight: 700 }}>
+                        Stok yoxdur
+                      </Typography>
+                    )}
                   </Box>
                 </Box>
                 <IconButton
                   aria-label="Məhsulu sil"
                   color="error"
-                  onClick={() => dispatch(removeFromCart(item.product._id))}
+                  onClick={() => dispatch(removeFromCart({
+                    productId: item.product._id,
+                    selectedSize: item.selectedSize,
+                  }))}
                 >
                   <DeleteIcon />
                 </IconButton>

@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, Button, Box, Alert,
+  TextField, Button, Box, Alert, Checkbox, FormControl, FormControlLabel, FormGroup, FormLabel,
 } from '@mui/material';
-import type { Product } from '../../types';
+import {
+  DEFAULT_PRODUCT_SIZES,
+  PRODUCT_SIZES,
+  type Product,
+  type ProductSize,
+} from '../../types';
 
 interface Props {
   open: boolean;
@@ -16,10 +21,11 @@ interface Props {
 const empty = {
   name: '',
   description: '',
-  price: 0,
+  price: '',
   category: '',
-  stock: 0,
+  stock: '',
   image: '',
+  sizes: DEFAULT_PRODUCT_SIZES,
 };
 
 export const ProductFormDialog = ({
@@ -33,10 +39,11 @@ export const ProductFormDialog = ({
       setForm({
         name: initialData.name,
         description: initialData.description,
-        price: initialData.price,
+        price: String(initialData.price),
         category: initialData.category,
-        stock: initialData.stock,
+        stock: String(initialData.stock),
         image: initialData.image,
+        sizes: initialData.sizes?.length ? initialData.sizes : DEFAULT_PRODUCT_SIZES,
       });
     } else {
       setForm(empty);
@@ -49,16 +56,31 @@ export const ProductFormDialog = ({
       setError('Ad və kateqoriya mütləqdir');
       return;
     }
-    if (form.price < 0 || form.stock < 0) {
+    const price = Number(form.price);
+    const stock = Number(form.stock);
+    if (!Number.isFinite(price) || price < 0 || !Number.isFinite(stock) || stock < 0) {
       setError('Qiymət və stok mənfi ola bilməz');
+      return;
+    }
+    if (form.sizes.length === 0) {
+      setError('Ən azı bir ölçü seçin');
       return;
     }
     try {
       setError('');
-      await onSubmit(form);
+      await onSubmit({ ...form, price, stock });
     } catch (err: any) {
       setError(err?.data?.message || 'Xəta baş verdi');
     }
+  };
+
+  const toggleSize = (size: ProductSize) => {
+    setForm((current) => ({
+      ...current,
+      sizes: current.sizes.includes(size)
+        ? current.sizes.filter((selectedSize) => selectedSize !== size)
+        : [...current.sizes, size],
+    }));
   };
 
   return (
@@ -87,10 +109,7 @@ export const ProductFormDialog = ({
             label="Qiymət"
             type="number"
             value={form.price}
-            onChange={(e) => {
-              const val = Number(e.target.value);
-              setForm({ ...form, price: val < 0 ? 0 : val });
-            }}
+            onChange={(e) => setForm({ ...form, price: e.target.value })}
             onWheel={(e) => (e.target as HTMLElement).blur()}
             onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
             fullWidth
@@ -105,16 +124,30 @@ export const ProductFormDialog = ({
             label="Stok"
             type="number"
             value={form.stock}
-            onChange={(e) => {
-              const val = Number(e.target.value);
-              setForm({ ...form, stock: val < 0 ? 0 : val });
-            }}
+            onChange={(e) => setForm({ ...form, stock: e.target.value })}
             onWheel={(e) => (e.target as HTMLElement).blur()}
             onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
             fullWidth
           />
+          <FormControl component="fieldset">
+            <FormLabel component="legend">Mövcud ölçülər</FormLabel>
+            <FormGroup row>
+              {PRODUCT_SIZES.map((size) => (
+                <FormControlLabel
+                  key={size}
+                  control={
+                    <Checkbox
+                      checked={form.sizes.includes(size)}
+                      onChange={() => toggleSize(size)}
+                    />
+                  }
+                  label={size}
+                />
+              ))}
+            </FormGroup>
+          </FormControl>
           <TextField
-            label="Şəkil URL"
+            label="Şəkil URL-si"
             value={form.image}
             onChange={(e) => setForm({ ...form, image: e.target.value })}
             fullWidth

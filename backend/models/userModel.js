@@ -8,12 +8,35 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    lastName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     email: {
       type: String,
       required: true,
       unique: true,
       trim: true,
       lowercase: true,
+    },
+    phone: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    address: {
+      type: String,
+      required: function () {
+        return this.isNew || Boolean(this.address);
+      },
+      trim: true,
+      maxlength: 500,
+    },
+    termsAccepted: {
+      type: Boolean,
+      required: true,
+      default: false,
     },
     password: {
       type: String,
@@ -24,6 +47,13 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ['user', 'admin'],
       default: 'user',
+    },
+    favorites: {
+      type: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Product',
+      }],
+      default: [],
     },
   },
   {
